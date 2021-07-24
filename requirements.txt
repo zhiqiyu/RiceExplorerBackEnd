@@ -47,7 +47,7 @@ pytz==2021.1
 pyu2f==0.1.5
 requests==2.26.0
 rsa==4.7.2
-setuptools==49.6.0.post20210108
+setuptools==49.6.0
 simplejson==3.17.3
 six==1.16.0
 sqlparse==0.4.1
