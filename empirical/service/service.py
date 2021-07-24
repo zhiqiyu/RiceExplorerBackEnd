@@ -28,7 +28,7 @@ def run_classification(filters):
 
     for season in seasons:
         if season in filters:
-            print(season, filters)
+
             start_date, end_date = filters[season]['start'], filters[season]['end']
             ascd, desc = filters[season]['ascd'], filters[season]['desc']
             thres_min, thres_max = float(filters[season]['min']), float(filters[season]['max'])
