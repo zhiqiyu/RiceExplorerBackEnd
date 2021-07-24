@@ -13,6 +13,7 @@ charset-normalizer==2.0.0
 cryptography==3.4.7
 dj-database-url==0.5.0
 Django==3.2.4
+django-cors-headers==3.7.0
 django-heroku==0.3.1
 djangorestframework==3.12.4
 earthengine-api==0.1.268
