@@ -1,0 +1,226 @@
+<div class="sidebar h-100 p-2">
+  <form method="post">
+  {% csrf_token %}
+    <div class="card mb-2">
+      <div class="row align-items-center gx-2 m-0 card-header">
+        <div class="col-auto">
+          <input type="checkbox" id="sowing_switch" value="" checked>
+        </div>
+        <div class="col-auto">
+          <h5 class="m-0">Sowing</h5>
+        </div>
+      </div>
+      <fieldset id="sowing_fields">
+        <div class="card-body">
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              <label for="sowing_start" class="col-form-label">Start date</label>
+            </div>
+            <div class="col-sm-8">
+              <input type="date" id="sowing_start" class="form-control" name="sowing_start">
+            </div>
+          </div>
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4"> 
+              <label for="sowing_end" class="col-form-label">End date</label>
+            </div>
+            <div class="col-sm-8">
+              <input type="date" id="sowing_end" class="form-control" name="sowing_end">
+            </div>
+          </div>
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              Orbit
+            </div>
+            <div class="col-sm-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sowing_ascd" name="sowing_ascd">
+                <label class="form-check-label" for="sowing_ascd">
+                  Ascending
+                </label>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sowing_desc" name="sowing_desc" checked>
+                <label class="form-check-label" for="sowing_desc">
+                  Descending
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="row gx-3 align-items-center">
+            <div class="col-sm-4">
+              <label for="sowing_thres" class="col-form-label">Threshold</label>
+            </div>
+            <div class="col-sm-8">
+              <div class="row gx-1 align-items-center">
+                <div class="col">
+                  <input type="number" class="form-control" step="0.01" placeholder="min" name="sowing_min">
+                </div>
+                <div class="col-auto">-</div>
+                <div class="col">
+                  <input type="number" class="form-control" step="0.01" placeholder="max" name="sowing_max">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="card mb-2">
+      <div class="row align-items-center gx-2 m-0 card-header">
+        <div class="col-auto">
+          <input type="checkbox" id="peak_switch" value="" checked>
+        </div>
+        <div class="col-auto">
+          <h5 class="m-0">Peak</h5>
+        </div>
+      </div>
+      <fieldset id="peak_fields">
+        <div class="card-body">
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              <label for="peak_start" class="col-form-label">Start date</label>
+            </div>
+            <div class="col-sm-8">
+              <input type="date" id="peak_start" class="form-control" name="peak_start">
+            </div>
+          </div>
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              <label for="peak_end" class="col-form-label">End date</label>
+            </div>
+            <div class="col-sm-8">
+              <input type="date" id="peak_end" class="form-control" name="peak_end">
+            </div>
+          </div>
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              Orbit
+            </div>
+            <div class="col-sm-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="peak_ascd" name="peak_ascd">
+                <label class="form-check-label" for="peak_ascd">
+                  Ascending
+                </label>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="peak_desc" name="peak_desc" checked>
+                <label class="form-check-label" for="peak_desc">
+                  Descending
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="row gx-3 align-items-center">
+            <div class="col-sm-4">
+              <label for="peak_thres" class="col-form-label">Threshold</label>
+            </div>
+            <div class="col-sm-8">
+              <div class="row gx-1 align-items-center">
+                <div class="col">
+                  <input type="number" class="form-control" step="0.01" placeholder="min" name="peak_min">
+                </div>
+                <div class="col-auto">-</div>
+                <div class="col">
+                  <input type="number" class="form-control" step="0.01" placeholder="max" name="peak_max">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="card mb-2">
+      <div class="row align-items-center gx-2 m-0 card-header">
+        <div class="col-auto">
+          <input type="checkbox" id="harvesting_switch" value="" checked>
+        </div>
+        <div class="col-auto">
+          <h5 class="m-0">Harvesting</h5>
+        </div>
+      </div>
+      <fieldset id="harvesting_fields">
+        <div class="card-body">
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              <label for="harvesting_start" class="col-form-label">Start date</label>
+            </div>
+            <div class="col-sm-8">
+              <input type="date" id="harvesting_start" class="form-control" name="harvesting_start">
+            </div>
+          </div>
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              <label for="harvesting_end" class="col-form-label">End date</label>
+            </div>
+            <div class="col-sm-8">
+              <input type="date" id="harvesting_end" class="form-control" name="harvesting_end">
+            </div>
+          </div>
+          <div class="row gx-3 mb-2 align-items-center">
+            <div class="col-sm-4">
+              Orbit
+            </div>
+            <div class="col-sm-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="harvesting_ascd" name="harvesting_ascd">
+                <label class="form-check-label" for="harvesting_ascd">
+                  Ascending
+                </label>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="harvesting_desc" name="harvesting_desc" checked>
+                <label class="form-check-label" for="harvesting_desc">
+                  Descending
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="row gx-3 align-items-center">
+            <div class="col-sm-4">
+              <label for="harvesting_thres" class="col-form-label">Threshold</label>
+            </div>
+            <div class="col-sm-8">
+              <div class="row gx-1 align-items-center">
+                <div class="col">
+                  <input type="number" class="form-control" step="0.01" placeholder="min" name="harvesting_min">
+                </div>
+                <div class="col-auto">-</div>
+                <div class="col">
+                  <input type="number" class="form-control" step="0.01" placeholder="max" name="harvesting_max">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="card mb-2">
+      <div class="card-body">
+        <input type="submit" class="form-control" value="Run">
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  $('#sowing_switch').on('change', (e)=>{
+    $('#sowing_fields').attr('disabled', !e.target.checked)
+  })
+  $('#peak_switch').on('change', (e)=>{
+    $('#peak_fields').attr('disabled', !e.target.checked)
+  })
+  $('#harvesting_switch').on('change', (e)=>{
+    $('#harvesting_fields').attr('disabled', !e.target.checked)
+  })
+</script>

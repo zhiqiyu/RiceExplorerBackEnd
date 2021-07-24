@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block header %}
+  {{ map.header.render|safe }}
+  <link rel="stylesheet" href="{% static 'empirical/style.css' %}">
+{% endblock header %}
+
+{% block empirical_selected %}active{% endblock empirical_selected %}
+
+{% block main %}
+<div class="main h-100 p-0">
+  {% comment %} <div class="row container h-100 g-0"> {% endcomment %}
+
+  <div class="sidebar-container h-100" id="panel1">
+    {% include './partials/sidebar.html' %}
+  </div>
+
+  <div id="separator"></div>
+
+  <div class="map-container h-100 w-100" id="panel2">
+    {{map.html.render|safe}}
+  </div>
+  {% comment %} </div> {% endcomment %}
+</div>
+{% endblock main %}
+
+{% block scripts %}
+<script>
+  {{ map.script.render|safe }}
+</script> 
+<script src="{% static 'empirical/script.js' %}"></script>
+{% endblock scripts %}
+
