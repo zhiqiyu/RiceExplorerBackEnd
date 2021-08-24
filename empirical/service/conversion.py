@@ -1,4 +1,6 @@
+import json
 import os
+from django.core.exceptions import BadRequest
 import ee
 
 def shp_to_ee(in_shp):
@@ -16,7 +18,21 @@ def shp_to_ee(in_shp):
         return ee_object
     except Exception as e:
         print(e)
-        
+
+def shp_reader_to_geojson(shp_reader):
+    fields = shp_reader.fields[1:]
+    field_names = [field[0] for field in fields]
+    buffer = []
+    for sr in shp_reader.shapeRecords():
+        atr = dict(zip(field_names, sr.record))
+        geom = sr.shape.__geo_interface__
+        buffer.append(dict(type="Feature", geometry=geom, properties=atr))
+    
+    import json
+    geojson = json.dumps({"type": "FeatureCollection",
+                            "features": buffer}, indent=2)
+    return geojson
+
 def shp_to_geojson(in_shp, out_json=None):
     """Converts a shapefile to GeoJSON.
 
@@ -43,18 +59,10 @@ def shp_to_geojson(in_shp, out_json=None):
             os.makedirs(os.path.dirname(out_json))
 
         reader = shapefile.Reader(in_shp)
-        fields = reader.fields[1:]
-        field_names = [field[0] for field in fields]
-        buffer = []
-        for sr in reader.shapeRecords():
-            atr = dict(zip(field_names, sr.record))
-            geom = sr.shape.__geo_interface__
-            buffer.append(dict(type="Feature", geometry=geom, properties=atr))
-
-        from json import dumps
+        
+        geojson_str = shp_reader_to_geojson(reader)
         geojson = open(out_json, "w")
-        geojson.write(dumps({"type": "FeatureCollection",
-                             "features": buffer}, indent=2) + "\n")
+        geojson.write(geojson_str + "\n")
         geojson.close()
 
         with open(out_json) as f:
@@ -82,7 +90,7 @@ def geojson_to_ee(geo_json, geodesic=True):
         if not isinstance(geo_json, dict) and os.path.isfile(geo_json):
             with open(os.path.abspath(geo_json)) as f:
                 geo_json = json.load(f)
-
+        
         if geo_json['type'] == 'FeatureCollection':
             features = ee.FeatureCollection(geo_json['features'])
             return features
@@ -100,10 +108,45 @@ def geojson_to_ee(geo_json, geodesic=True):
                 geom = ee.Geometry.Point(longitude, latitude)
             else:
                 geom = ee.Geometry(geo_json['geometry'], "", geodesic)
-            return geom
+            return ee.Feature(geom)
         else:
             print("Could not convert the geojson to ee.Geometry()")
 
     except Exception as e:
         print("Could not convert the geojson to ee.Geometry()")
         print(e)
+
+
+def shp_zip_to_ee(file):
+    from zipfile import ZipFile
+    import re
+    from shapefile import Reader
+    
+    zip = ZipFile(file)
+    file_names = zip.namelist()
+    shp_filename = None
+    shx_filename = None
+    dbf_filename = None
+    for file_name in file_names:
+        shp_match = re.match(r".+\.shp$", file_name)
+        shx_match = re.match(r".+\.shx$", file_name)
+        dbf_match = re.match(r".+\.dbf$", file_name)
+        
+        if shp_match:
+            shp_filename = file_name
+        elif shx_match:
+            shx_filename = file_name
+        elif dbf_match:
+            dbf_filename = file_name
+    
+    if not shp_filename or not shx_filename or not dbf_filename:
+        raise BadRequest("Invalid boundary file")
+    
+    reader = Reader(shp=zip.open(shp_filename), shx=zip.open(shx_filename), dbf=zip.open(dbf_filename))
+    
+    geojson_str = shp_reader_to_geojson(reader)
+    
+    ee_obj = geojson_to_ee(json.loads(geojson_str))
+    
+    return ee_obj
+    

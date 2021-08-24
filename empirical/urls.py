@@ -5,5 +5,5 @@ from . import views
 app_name = 'empirical'
 
 urlpatterns = [
-    path('', views.set_params, name="set_params"),
+    path('', views.run_algorithm, name="set_params"),
 ]
