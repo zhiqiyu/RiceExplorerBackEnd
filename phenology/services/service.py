@@ -49,11 +49,13 @@ def saveSettingsToSession(data):
     
 
     season_res = {}
+    sample_res = samples_ee
     for season in season_pools:
-        season_img = season_pools[season].map(lambda img: img.rename(ee.Number(img.get('system:time_start')).format("%d").cat("_feature"))).toBands()
-        season_sample = season_img.sampleRegions(samples_ee, properties=[], geometries=True)
-        season_res[season] = season_sample.getInfo()
-    return season_res
+        season_img = season_pools[season].map(lambda img: img.rename(ee.Number(img.get('system:time_start')).format("%d").cat('_').cat(season).cat("_feature__"))).toBands()
+        sample_res = season_img.sampleRegions(sample_res, geometries=True)
+        # season_res[season] = season_sample.getInfo()
+        # total_res = 
+    return sample_res.getInfo()
 
 
 def filter_dataset(data_filters: dict, start_date, end_date, boundary=None) -> ee.ImageCollection:

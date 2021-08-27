@@ -7,7 +7,7 @@ from django.conf import settings
 
 EE_ACCOUNT = 'myeeaccount@testee-319020.iam.gserviceaccount.com'
 
-EE_PRIVATE_KEY_FILE = os.path.join(settings.BASE_DIR, 'myprivatekey.json')
+EE_PRIVATE_KEY_FILE = os.path.join(settings.BASE_DIR, 'ee_credential.json')
 
 EE_CREDENTIALS = ee.ServiceAccountCredentials(
     EE_ACCOUNT, EE_PRIVATE_KEY_FILE)
