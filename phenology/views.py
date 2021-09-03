@@ -4,13 +4,13 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 from django.views.generic.base import TemplateView
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 
 import ee
 import json
 
 
-@ensure_csrf_cookie
+@csrf_exempt
 def saveSettings(request):
     if request.method == "POST":
         try:

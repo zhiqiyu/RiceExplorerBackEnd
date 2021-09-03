@@ -36,6 +36,9 @@ def run_classification(filters):
         default_boundary = shp_to_ee(default_boundary_file)
         boundary = default_boundary.filterMetadata('DISTRICT', 'equals', data_filters['boundary']).first().geometry()
     
+    # crop mask
+    crop_mask = ee.Image("projects/testee-319020/assets/terai_agri_mask").clip(boundary)
+    
     # filter dataset
     pool = filter_dataset(data_filters, boundary)
     
@@ -56,8 +59,8 @@ def run_classification(filters):
             
             # speckle filter if radar data
             # TODO: allow selectio of speckle filter type
-            if data_filters['name'] in dataset_names['radar']:
-                season_data_pool = season_data_pool.map(lambda img: refinedLee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
+            # if data_filters['name'] in dataset_names['radar']:
+            #     season_data_pool = season_data_pool.map(lambda img: refinedLee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
             
             # compute selected feature
             season_data_pool = compute_feature(data_filters['name'], season_data_pool, data_filters['feature'])
@@ -77,7 +80,7 @@ def run_classification(filters):
                 raise BadRequest("Unrecognized composite type")
             
             # print(season_data.getDownloadUrl({'name': 'data', 'region': boundary}))
-            season_res[season] = (season_data.lte(thres_max)).And(season_data.gte(thres_min)).clip(boundary)
+            season_res[season] = (season_data.lte(thres_max)).And(season_data.gte(thres_min)).updateMask(crop_mask).clip(boundary)
 
         else:
             del season_res[season]
@@ -86,13 +89,18 @@ def run_classification(filters):
     season_res_list = list(season_res.values())
     combined_res = season_res_list[0]
     for i in range(1, len(season_res_list)):
-        combined_res = combined_res.And(season_res_list[i])
-        
+        combined_res = combined_res.Or(season_res_list[i])
+    
+    
     res = {}
     if data_filters['name'] in dataset_names['radar']:
         scale = dataset_names['radar'][data_filters['name']]['scale']
     else:
         scale = dataset_names['optical'][data_filters['name']]['scale']
+    
+    # compute area
+    area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
+    
         
     for season, layer in season_res.items():
         
@@ -102,7 +110,8 @@ def run_classification(filters):
                 'name': season,
                 'scale': 200,
                 'region': boundary,
-            })
+            }),
+            
         }
         
     res['combined'] = {
@@ -111,7 +120,8 @@ def run_classification(filters):
             'name': 'combined',
             'scale': 200,
             'region': boundary,
-        })
+        }),
+        "area": area
     }
         
     return res
