@@ -44,6 +44,10 @@ def run_classification(filters):
     
     # apply specific filter and thresholds for each season
     season_res = {season: None for season in seasons}
+    
+    def map_func(composite):
+        composite = ee.Image(composite)
+        return (composite.lte(thres_max)).And(composite.gte(thres_min)).updateMask(crop_mask).clip(boundary)
 
     for season in seasons:
         if season in filters:
@@ -66,22 +70,27 @@ def run_classification(filters):
             season_data_pool = compute_feature(data_filters['name'], season_data_pool, data_filters['feature'])
             
             # make composite 
-            if data_filters['composite'] == 'minimum':
-                season_data = season_data_pool.min()
-            elif data_filters['composite'] == 'maximum':
-                season_data = season_data_pool.max()
-            elif data_filters['composite'] == 'median':
-                season_data = season_data_pool.median()
-            elif data_filters['composite'] == 'mean':
-                season_data = season_data_pool.mean()
-            elif data_filters['composite'] == 'mode':
-                season_data = season_data_pool.mode()
-            else:
-                raise BadRequest("Unrecognized composite type")
+            # if data_filters['composite'] == 'minimum':
+            #     season_data = season_data_pool.min()
+            # elif data_filters['composite'] == 'maximum':
+            #     season_data = season_data_pool.max()
+            # elif data_filters['composite'] == 'median':
+            #     season_data = season_data_pool.median()
+            # elif data_filters['composite'] == 'mean':
+            #     season_data = season_data_pool.mean()
+            # elif data_filters['composite'] == 'mode':
+            #     season_data = season_data_pool.mode()
+            # else:
+            #     raise BadRequest("Unrecognized composite type")
+            composites = make_composite(season_data_pool, start_date, end_date, days=15, method=data_filters['composite'])
+            
             
             # print(season_data.getDownloadUrl({'name': 'data', 'region': boundary}))
-            season_res[season] = (season_data.lte(thres_max)).And(season_data.gte(thres_min)).updateMask(crop_mask).clip(boundary)
-
+            # season_res[season] = (season_data.lte(thres_max)).And(season_data.gte(thres_min)).updateMask(crop_mask).clip(boundary)
+            thresholded_composites = composites.map(map_func)
+            
+            season_res[season] = thresholded_composites.Or()
+            
         else:
             del season_res[season]
 
@@ -188,6 +197,38 @@ def filter_dataset(data_filters: dict, boundary) -> ee.ImageCollection:
     pool = ee.ImageCollection(dataset_name).filter(ee.Filter(fils)).filterBounds(boundary)
 
     return pool
+
+def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days=15, method="median"):
+    
+    def getComposite(date):
+        date = ee.Date(date)
+        end_millis = date.advance(15, "day").millis().min(ee.Date(end_date).millis()) 
+        filtered_pool = data_pool.filterDate(date, ee.Date(end_millis))
+        
+        if method == 'minimum':
+            season_data = filtered_pool.min()
+        elif method == 'maximum':
+            season_data = filtered_pool.max()
+        elif method == 'median':
+            season_data = filtered_pool.median()
+        elif method == 'mean':
+            season_data = filtered_pool.mean()
+        elif method == 'mode':
+            season_data = filtered_pool.mode()
+        else:
+            raise BadRequest("Unrecognized composite type")
+        return ee.Algorithms.If(filtered_pool.size().gt(0), season_data)
+    
+    def map_func(dateMillis):
+        date = ee.Date(dateMillis)
+        return getComposite(date)
+    
+    
+    gap_difference = ee.Date(start_date).advance(days, 'day').millis().subtract(ee.Date(start_date).millis())
+    list_map = ee.List.sequence(ee.Date(start_date).millis(), ee.Date(end_date).millis(), gap_difference)
+    composites = ee.ImageCollection.fromImages(list_map.map(map_func).removeAll([None]))
+    print(composites.size().getInfo())
+    return composites
 
 
 def compute_feature(dataset_name: str, pool: ee.ImageCollection, feature: str) -> ee.ImageCollection:
