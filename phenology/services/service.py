@@ -1,7 +1,7 @@
 import ee
 from django.core.exceptions import BadRequest
 from .constants import dataset_names, feature_list
-from .speckle_filters import dbToPower, powerToDb, refinedLee
+from .speckle_filters import dbToPower, powerToDb, refined_lee
 from .conversion import geojson_to_ee
 
 seasons = ['sowing', 'peak', 'harvesting']

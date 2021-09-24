@@ -11,7 +11,7 @@ def dbToPower(img):
 
 
 # The RL speckle filter
-def refinedLee(image):
+def refined_lee(image):
     def _mapFunc(b):
         nonlocal image
         img = image.select([b])
@@ -113,3 +113,7 @@ def refinedLee(image):
 
     result = ee.ImageCollection(bandNames.map(_mapFunc)).toBands().rename(bandNames)
     return powerToDb(ee.Image(result))
+
+
+def boxcar(image: ee.Image, radius=2):
+    return image.reduceNeighborhood(reducer=ee.Reducer.median(), kernel=ee.Kernel.square(radius))

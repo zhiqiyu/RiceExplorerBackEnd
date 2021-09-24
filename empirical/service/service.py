@@ -1,4 +1,4 @@
-from empirical.service.speckle_filters import dbToPower, refinedLee
+from empirical.service.speckle_filters import dbToPower, refined_lee, boxcar
 import ee
 from django.core.exceptions import BadRequest
 
@@ -37,7 +37,9 @@ def run_classification(filters):
         boundary = default_boundary.filterMetadata('DISTRICT', 'equals', data_filters['boundary']).first().geometry()
     
     # crop mask
-    crop_mask = ee.Image("projects/testee-319020/assets/terai_agri_mask").clip(boundary)
+    crop_mask = None
+    if data_filters["crop_mask"]:
+        crop_mask = ee.Image(data_filters["crop_mask"]).clip(boundary)
     
     # filter dataset
     pool = filter_dataset(data_filters, boundary)
@@ -45,7 +47,7 @@ def run_classification(filters):
     # apply specific filter and thresholds for each season
     season_res = {season: None for season in seasons}
     
-    def map_func(composite):
+    def map_composites(composite):
         composite = ee.Image(composite)
         return (composite.lte(thres_max)).And(composite.gte(thres_min)).updateMask(crop_mask).clip(boundary)
 
@@ -62,10 +64,16 @@ def run_classification(filters):
             season_data_pool = pool.filter(ee.Filter.date(start_date, end_date))
             
             # speckle filter if radar data
-            # TODO: allow selectio of speckle filter type
-            # if data_filters['name'] in dataset_names['radar']:
-            #     season_data_pool = season_data_pool.map(lambda img: refinedLee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
-            
+            # TODO: allow selection of speckle filter type
+            if data_filters['name'] in dataset_names['radar']:
+            #     season_data_pool = season_data_pool.map(lambda img: refined_lee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
+                season_data_pool = season_data_pool \
+                    .map(lambda img: boxcar(img) \
+                    .rename(img.bandNames()) \
+                    .copyProperties(img) \
+                    .set('system:time_start', img.get('system:time_start')))
+                # pass
+                
             # compute selected feature
             season_data_pool = compute_feature(data_filters['name'], season_data_pool, data_filters['feature'])
             
@@ -82,12 +90,12 @@ def run_classification(filters):
             #     season_data = season_data_pool.mode()
             # else:
             #     raise BadRequest("Unrecognized composite type")
-            composites = make_composite(season_data_pool, start_date, end_date, days=15, method=data_filters['composite'])
+            composites = make_composite(season_data_pool, start_date, end_date, days=int(data_filters["composite_days"]), method=data_filters['composite'])
             
             
             # print(season_data.getDownloadUrl({'name': 'data', 'region': boundary}))
             # season_res[season] = (season_data.lte(thres_max)).And(season_data.gte(thres_min)).updateMask(crop_mask).clip(boundary)
-            thresholded_composites = composites.map(map_func)
+            thresholded_composites = composites.map(map_composites)
             
             season_res[season] = thresholded_composites.Or()
             
@@ -107,7 +115,7 @@ def run_classification(filters):
     else:
         scale = dataset_names['optical'][data_filters['name']]['scale']
     
-    # compute area
+    # compute area with unit hectar
     area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
     
         
@@ -198,11 +206,11 @@ def filter_dataset(data_filters: dict, boundary) -> ee.ImageCollection:
 
     return pool
 
-def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days=15, method="median"):
+def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days, method="median"):
     
     def getComposite(date):
         date = ee.Date(date)
-        end_millis = date.advance(15, "day").millis().min(ee.Date(end_date).millis()) 
+        end_millis = date.advance(days, "day").millis().min(ee.Date(end_date).millis()) 
         filtered_pool = data_pool.filterDate(date, ee.Date(end_millis))
         
         if method == 'minimum':
@@ -217,6 +225,7 @@ def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days=15,
             season_data = filtered_pool.mode()
         else:
             raise BadRequest("Unrecognized composite type")
+        
         return ee.Algorithms.If(filtered_pool.size().gt(0), season_data)
     
     def map_func(dateMillis):
@@ -227,7 +236,7 @@ def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days=15,
     gap_difference = ee.Date(start_date).advance(days, 'day').millis().subtract(ee.Date(start_date).millis())
     list_map = ee.List.sequence(ee.Date(start_date).millis(), ee.Date(end_date).millis(), gap_difference)
     composites = ee.ImageCollection.fromImages(list_map.map(map_func).removeAll([None]))
-    print(composites.size().getInfo())
+    
     return composites
 
 
