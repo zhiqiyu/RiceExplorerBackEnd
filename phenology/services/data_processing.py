@@ -1,62 +1,10 @@
 import ee
 from django.core.exceptions import BadRequest
 from .constants import dataset_names, feature_list
-from .speckle_filters import dbToPower, powerToDb, refined_lee
-from .conversion import geojson_to_ee
+from .speckle_filters import dbToPower
+# from .conversion import geojson_to_ee
 
-seasons = ['sowing', 'peak', 'harvesting']
-
-def saveSettingsToSession(data):
-    data_filters = data['dataset']
-    samples = data['samples']
-    
-    samples_ee = geojson_to_ee(samples)
-    # print(samples_ee.getInfo())
-    # filter dataset
-    # pool = filter_dataset(data_filters, start_date, samples_ee.geometry())
-    
-    # apply specific filter and thresholds for each season
-    season_pools = {season: None for season in seasons}
-    
-    for season in seasons:
-        if season in data:
-            
-            # date range of this season
-            start_date, end_date = data[season]['start'], data[season]['end']
-            
-            # threshold min and max
-            # thres_min, thres_max = float(data[season]['min']), float(data[season]['max'])
-
-            season_data_pool = filter_dataset(data_filters, start_date, end_date, samples_ee.geometry())
-            
-            # filter by season date range
-            # season_data_pool = pool.filter(ee.Filter.date(start_date, end_date))
-            
-            # speckle filter if radar data
-            # TODO: allow selectio of speckle filter type
-            # if data_filters['name'] in dataset_names['radar']:
-                # season_data_pool = season_data_pool.map(lambda img: refinedLee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
-                # season_data_pool = season_data_pool.map(lambda img: refinedLee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
-            
-            # compute selected feature
-            season_data_pool = compute_feature(data_filters['name'], season_data_pool, data_filters['feature'])
-            
-            # season_pools[season] = (season_data_pool.lte(thres_max)).And(season_data.gte(thres_min)).clip(boundary)
-            season_pools[season] = season_data_pool
-            
-        else:
-            del season_pools[season]
-    
-
-    season_res = {}
-    sample_res = samples_ee
-    for season in season_pools:
-        season_img = season_pools[season].map(lambda img: img.rename(ee.Number(img.get('system:time_start')).format("%d").cat('_').cat(season).cat("_feature__"))).toBands()
-        sample_res = season_img.sampleRegions(sample_res, geometries=True)
-        # season_res[season] = season_sample.getInfo()
-        # total_res = 
-    return sample_res.getInfo()
-
+# seasons = ['sowing', 'peak', 'harvesting']
 
 def filter_dataset(data_filters: dict, start_date, end_date, boundary=None) -> ee.ImageCollection:
     """Apply given filters to dataset on GEE
@@ -167,4 +115,37 @@ def compute_feature(dataset_name: str, pool: ee.ImageCollection, feature: str) -
         return pool.map(map_optical)
             
 
+def makeFalseColorMonthlyComposite(year: int):
     
+    month_starts = []
+    for month in range(1, 13):
+        month_starts.append(f"{year}-{month}-1")
+    month_starts.append(f"{year+1}-1-1")
+    
+    month_ranges = list(zip(month_starts[:-1], month_starts[1:]))
+    
+    vis_params = {"min":0, "max": 1} #{"bands": ["B8", "B4", "B3"]}
+    
+    def map_month(month_range):
+        l8_filtered = l8.filterDate(ee.List(month_range).get(0), ee.List(month_range).get(1))
+        composite = l8_filtered.median()
+        # composite = ee.Algorithms.Landsat.simpleComposite(collection=l8_filtered, asFloat=True)
+        return composite #.getMapId(vis_params)['tile_fetcher'].url_format
+    
+    if year > 2013:
+        # Use Landsat-8 after 2013
+        # l8 = ee.ImageCollection("LANDSAT/LC08/C01/T1")
+        l8 = ee.ImageCollection("COPERNICUS/S2")
+        # months = ee.List(month_ranges)
+        urls = []
+        for month_start, month_end in month_ranges:
+            l8_filtered = l8.filterDate(month_start, month_end)
+            # composite = ee.Algorithms.Landsat.simpleComposite(collection=l8_filtered, asFloat=True)
+            composite = l8_filtered.map(lambda img: img.normalizedDifference(['B8', 'B4'])).median()
+            urls.append(composite.getMapId(vis_params)['tile_fetcher'].url_format)
+        return urls
+        # print(months.getInfo())
+        # composites = months.map(map_month).getInfo()
+        # print(composites)
+        # .filterDate(f"{year}-01-01", f"{int(year)+1}-01-01")
+        # composite = 
