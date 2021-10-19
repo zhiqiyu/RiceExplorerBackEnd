@@ -73,7 +73,7 @@ def shp_to_geojson(in_shp, out_json=None):
     except Exception as e:
         print(e)
         
-def geojson_to_ee(geo_json, geodesic=True):
+def geojson_to_ee(geo_json):
     """Converts a geojson to ee.Geometry()
 
     Args:
@@ -92,7 +92,7 @@ def geojson_to_ee(geo_json, geodesic=True):
                 geo_json = json.load(f)
         
         if geo_json['type'] == 'FeatureCollection':
-            features = ee.FeatureCollection(geo_json['features'])
+            features = ee.FeatureCollection(geo_json)
             return features
         elif geo_json['type'] == 'Feature':
             geom = None
@@ -107,13 +107,13 @@ def geojson_to_ee(geo_json, geodesic=True):
                 latitude = coordinates[1]
                 geom = ee.Geometry.Point(longitude, latitude)
             else:
-                geom = ee.Geometry(geo_json['geometry'], "", geodesic)
+                geom = ee.Geometry(geo_json['geometry'], "")
             return ee.Feature(geom)
         else:
-            print("Could not convert the geojson to ee.Geometry()")
+            print("Could not convert the geojson to ee.Geometry() - type")
 
     except Exception as e:
-        print("Could not convert the geojson to ee.Geometry()")
+        print("Could not convert the geojson to ee.Geometry() - exception")
         print(e)
 
 
