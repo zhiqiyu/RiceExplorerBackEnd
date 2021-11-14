@@ -26,7 +26,7 @@ def saveSettingsToSession(data):
     # apply specific filter and thresholds for each season
     # season_pools = {season: None for season in seasons}
     
-    # for season in seasons:
+    # for season in seasons: 
     #     if season in data:
             
     #         # date range of this season
