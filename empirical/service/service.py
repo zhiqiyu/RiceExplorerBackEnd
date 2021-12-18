@@ -69,9 +69,10 @@ def run_classification(filters):
             #     season_data_pool = season_data_pool.map(lambda img: refined_lee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
                 season_data_pool = season_data_pool \
                     .map(lambda img: boxcar(img) \
-                    .rename(img.bandNames()) \
-                    .copyProperties(img) \
-                    .set('system:time_start', img.get('system:time_start')))
+                        .rename(img.bandNames()) \
+                        .copyProperties(img) \
+                        .set('system:time_start', img.get('system:time_start'))
+                    )
                 # pass
                 
             # compute selected feature
