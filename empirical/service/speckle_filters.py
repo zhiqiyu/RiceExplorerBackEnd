@@ -116,4 +116,7 @@ def refined_lee(image):
 
 
 def boxcar(image: ee.Image, radius=2):
-    return image.reduceNeighborhood(reducer=ee.Reducer.median(), kernel=ee.Kernel.square(radius))
+    original_bandnames = image.bandNames()
+    return ee.Image(image.reduceNeighborhood(reducer=ee.Reducer.median(), kernel=ee.Kernel.square(radius)) \
+                .rename(original_bandnames) \
+                .copyProperties(image, ["system:time_start"]))
