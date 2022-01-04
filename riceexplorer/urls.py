@@ -22,6 +22,7 @@ urlpatterns = [
     path('', home, name="home"),
     path('phenology/', include('phenology.urls')),
     path('empirical/', include('empirical.urls')),
+    path('classification/', include('classification.urls')),
     path('admin/', admin.site.urls, name="admin"),
     # path('api-auth/', include('rest_framework.urls')),
 ]

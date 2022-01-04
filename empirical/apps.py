@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 import ee
-from empirical.utils.credential import EE_CREDENTIALS
+from utils.credential import EE_CREDENTIALS
 
 class EmpiricalConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

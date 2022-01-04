@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 import ee
-from phenology.utils.credential import EE_CREDENTIALS
+from utils.credential import EE_CREDENTIALS
 
 
 

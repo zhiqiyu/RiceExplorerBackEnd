@@ -5,7 +5,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 import json
 
-import empirical.service.service as service
+import service.main as service
 
 
 @csrf_exempt
@@ -14,11 +14,11 @@ def run_algorithm(request):
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
             filters = json.load(request.FILES['json'])
-            if 'file' in request.FILES:
-                filters['dataset']['boundary_file'] = request.FILES['file']
+            if 'boundary_file' in request.FILES:
+                filters['dataset']['boundary_file'] = request.FILES['boundary_file']
                 
             try:
-                res = service.run_classification(filters)
+                res = service.run_threshold_based_classification(filters)
                 return JsonResponse(res)
             except BadRequest as e:
                 return HttpResponseBadRequest(e)
