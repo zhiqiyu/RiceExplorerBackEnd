@@ -199,6 +199,7 @@ def run_supervised_classification(filters, samples):
     start_date, end_date = classification_filters['start_date'], \
                             classification_filters['end_date']
     
+    # add a class property to each sample, either 0 or 1
     class_property = classification_filters['class_property']
     class_name = class_property['name']
     class_value = class_property['positiveValue']
@@ -208,6 +209,7 @@ def run_supervised_classification(filters, samples):
         else:
             feature['properties'][CLASS_FIELD] = 0
 
+    # try convert geojson to an ee.FeatureCollection
     samples_ee = geojson_to_ee(samples)
     
     if dataset_filters['name'] in DATASET_LIST['radar']:
@@ -234,7 +236,8 @@ def run_supervised_classification(filters, samples):
     # TODO: allow more options for speckle filters
     if dataset_filters['name'] in DATASET_LIST['radar']:
         pool = pool.map(lambda img: boxcar(img))
-        
+    
+    # compute features from raw images, e.g., NDVI, RVI, etc.
     pool = compute_feature(
         dataset_filters['name'], 
         pool, 
@@ -251,26 +254,15 @@ def run_supervised_classification(filters, samples):
     )
     
     stacked_image = composites.toBands()
-    stacked_image = stacked_image
     
     # get image data for each sample
-    # TODO: remove hard coded name
-    
-    
-    # def map_func(feature):
-    #     feature = ee.Feature(feature)
-    #     class_val = feature.get(class_name)
-    #     return feature.set(CLASS_FIELD, feature.get(class_name))
-    
-    # samples_ee = samples_ee.map()
-    
     points = stacked_image.sampleRegions(samples_ee, [CLASS_FIELD], scale=scale) \
                             .randomColumn() \
                             .set('band_order', stacked_image.bandNames())
     
     # train test split
-    training = points.filter(ee.Filter.lt('random', 0.7))
-    testing = points.filter(ee.Filter.gte('random', 0.7))
+    training = points.filter(ee.Filter.lt('random', classification_filters['training_ratio']))
+    testing = points.filter(ee.Filter.gte('random', classification_filters['training_ratio']))
     
     # model training
     model_func = MODEL_LIST[classification_filters['model']]
