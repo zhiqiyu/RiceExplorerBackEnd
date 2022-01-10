@@ -83,38 +83,33 @@ def geojson_to_ee(geo_json):
         ee_object: An ee.Geometry object
     """
 
-    try:
+    import json
 
-        import json
-
-        if not isinstance(geo_json, dict) and os.path.isfile(geo_json):
-            with open(os.path.abspath(geo_json)) as f:
-                geo_json = json.load(f)
-        
-        if geo_json['type'] == 'FeatureCollection':
-            features = ee.FeatureCollection(geo_json)
-            return features
-        elif geo_json['type'] == 'Feature':
-            geom = None
-            keys = geo_json['properties']['style'].keys()
-            if 'radius' in keys:  # Checks whether it is a circle
-                geom = ee.Geometry(geo_json['geometry'])
-                radius = geo_json['properties']['style']['radius']
-                geom = geom.buffer(radius)
-            elif geo_json['geometry']['type'] == 'Point':  # Checks whether it is a point
-                coordinates = geo_json['geometry']['coordinates']
-                longitude = coordinates[0]
-                latitude = coordinates[1]
-                geom = ee.Geometry.Point(longitude, latitude)
-            else:
-                geom = ee.Geometry(geo_json['geometry'], "")
-            return ee.Feature(geom)
+    if not isinstance(geo_json, dict) and os.path.isfile(geo_json):
+        with open(os.path.abspath(geo_json)) as f:
+            geo_json = json.load(f)
+    
+    if geo_json['type'] == 'FeatureCollection':
+        features = ee.FeatureCollection(geo_json)
+        return features
+    elif geo_json['type'] == 'Feature':
+        geom = None
+        keys = geo_json['properties']['style'].keys()
+        if 'radius' in keys:  # Checks whether it is a circle
+            geom = ee.Geometry(geo_json['geometry'])
+            radius = geo_json['properties']['style']['radius']
+            geom = geom.buffer(radius)
+        elif geo_json['geometry']['type'] == 'Point':  # Checks whether it is a point
+            coordinates = geo_json['geometry']['coordinates']
+            longitude = coordinates[0]
+            latitude = coordinates[1]
+            geom = ee.Geometry.Point(longitude, latitude)
         else:
-            print("Could not convert the geojson to ee.Geometry() - type")
+            geom = ee.Geometry(geo_json['geometry'], "")
+        return ee.Feature(geom)
+    else:
+        raise Exception("Could not convert the geojson to ee.Geometry() - type")
 
-    except Exception as e:
-        print("Could not convert the geojson to ee.Geometry() - exception")
-        print(e)
 
 
 def shp_zip_to_ee(file):

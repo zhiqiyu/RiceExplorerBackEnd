@@ -1,6 +1,6 @@
 import ee
 from django.core.exceptions import BadRequest
-from .constants import dataset_names, feature_list
+from .constants import DATASET_LIST, FEATURE_LIST
 from .speckle_filters import dbToPower
 # from .conversion import geojson_to_ee
 
@@ -26,14 +26,14 @@ def filter_dataset(data_filters: dict, boundary=None) -> ee.ImageCollection:
     
     # dataset name
     dataset_name = data_filters['name']
-    if dataset_name not in dataset_names['radar'] and dataset_name not in dataset_names['optical']:
+    if dataset_name not in DATASET_LIST['radar'] and dataset_name not in DATASET_LIST['optical']:
         raise BadRequest("dataset name not found")
     
     
-    if dataset_name in dataset_names['radar']:
+    if dataset_name in DATASET_LIST['radar']:
         # radar data - Sentinel 1
         feature = data_filters['feature']
-        if feature not in feature_list['radar']:
+        if feature not in FEATURE_LIST['radar']:
             raise BadRequest("Wrong features")
         
         fils.append(ee.Filter.eq('instrumentMode', 'IW'))
@@ -85,21 +85,21 @@ def compute_feature(dataset_name: str, pool: ee.ImageCollection, feature: str) -
     def map_optical(img):
         nonlocal feature
         if feature == 'NDVI':
-            nir = dataset_names['optical'][dataset_name]['bands']['nir']
-            red = dataset_names['optical'][dataset_name]['bands']['red']
+            nir = DATASET_LIST['optical'][dataset_name]['bands']['nir']
+            red = DATASET_LIST['optical'][dataset_name]['bands']['red']
             feature_img = img.normalizedDifference([nir, red]).rename('feature')
         elif feature == 'EVI':
-            nir = dataset_names['optical'][dataset_name]['bands']['nir']
-            red = dataset_names['optical'][dataset_name]['bands']['red']
-            blue = dataset_names['optical'][dataset_name]['bands']['blue']
+            nir = DATASET_LIST['optical'][dataset_name]['bands']['nir']
+            red = DATASET_LIST['optical'][dataset_name]['bands']['red']
+            blue = DATASET_LIST['optical'][dataset_name]['bands']['blue']
             feature_img = img.expression(f"feature= 2.5 * (b('{nir}') - b('{red}')) / (b('{nir}') + 6 * b('{red}') - 7.5 * b('{blue}') + 1)")
         elif feature == 'NDWI':
-            green = dataset_names['optical'][dataset_name]['bands']['green']
-            nir = dataset_names['optical'][dataset_name]['bands']['nir']
+            green = DATASET_LIST['optical'][dataset_name]['bands']['green']
+            nir = DATASET_LIST['optical'][dataset_name]['bands']['nir']
             feature_img = img.normalizedDifference([green, nir]).rename('feature')
         elif feature == 'MNDWI':
-            green = dataset_names['optical'][dataset_name]['bands']['green']
-            swir1 = dataset_names['optical'][dataset_name]['bands']['swir1']
+            green = DATASET_LIST['optical'][dataset_name]['bands']['green']
+            swir1 = DATASET_LIST['optical'][dataset_name]['bands']['swir1']
             feature_img = img.normalizedDifference([green, swir1]).rename('feature')
         else:
             feature_img = None
@@ -107,14 +107,14 @@ def compute_feature(dataset_name: str, pool: ee.ImageCollection, feature: str) -
         return feature_img.copyProperties(img).set('system:time_start', img.get('system:time_start'))
 
     
-    if feature in feature_list['radar']:
+    if feature in FEATURE_LIST['radar']:
         if feature in ['VV', 'VH']:
             return pool.select(feature).map(lambda img: img.rename('feature').copyProperties(img).set('system:time_start', img.get('system:time_start')))
         else:
             return pool.map(map_radar)
-    elif feature in feature_list['optical']:
+    elif feature in FEATURE_LIST['optical']:
         return pool.map(map_optical)
-            
+
 
 def make_false_color_monthly_composite(year: int):
 

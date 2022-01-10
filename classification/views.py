@@ -8,7 +8,7 @@ from classification.forms import PostForm
 
 import service.main as service
 
-# Create your views here.
+
 @csrf_exempt
 def handle_request(request):
     if request.method == "POST":
@@ -17,16 +17,17 @@ def handle_request(request):
             filters = json.load(request.FILES['json'])
             if 'boundary_file' in request.FILES:
                 filters['dataset']['boundary_file'] = request.FILES['boundary_file']
-            
+
             if 'samples' not in request.FILES:
                 return HttpResponseBadRequest('No ground truth samples provided.')
-                
+
             try:
-                res = service.run_supervised_classification(filters, json.load(request.FILES['samples']))
+                res = service.run_supervised_classification(
+                    filters, json.load(request.FILES['samples']))
                 return JsonResponse(res)
             except Exception as e:
                 return HttpResponseBadRequest(e)
-            
+
         else:
             return HttpResponseBadRequest("Form is invalid")
     else:

@@ -1,4 +1,6 @@
-dataset_names = {
+import ee
+
+DATASET_LIST = {
     'radar': {
         "COPERNICUS/S1_GRD": {
             'name': "Sentinel-1 SAR GRD: C-band Synthetic Aperture Radar Ground Range Detected, log scaling",
@@ -73,7 +75,7 @@ dataset_names = {
     }
 }
 
-feature_list = {
+FEATURE_LIST = {
     'radar': {
         'VH': "VH band",
         'VV': "VV band",
@@ -85,4 +87,12 @@ feature_list = {
         'NDWI': "NDWI",
         'MNDWI': "MNDWI",
     },
+}
+
+MODEL_LIST = {
+    'Random Forest': ee.Classifier.smileRandomForest,
+    'Gradient Tree Boost': ee.Classifier.smileGradientTreeBoost,
+    'Support Vector Machine': ee.Classifier.libsvm,
+    'CART': ee.Classifier.smileCart,
+    'Naive Bayes': ee.Classifier.smileNaiveBayes,
 }

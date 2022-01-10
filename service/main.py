@@ -2,7 +2,7 @@ from django.core.exceptions import BadRequest
 import ee
 from .data_processing import compute_feature, filter_dataset, make_false_color_monthly_composite
 from .conversion import geojson_to_ee, shp_to_ee, shp_zip_to_ee
-from .constants import dataset_names, feature_list
+from .constants import DATASET_LIST, FEATURE_LIST, MODEL_LIST
 from .speckle_filters import boxcar
 
 seasons = ['sowing', 'peak', 'harvesting']
@@ -21,13 +21,12 @@ def get_phenology(data):
     data_filters = data['dataset']
     samples = data['samples']
     
-    samples_ee = geojson_to_ee(samples)
+    samples_ee = geojson_to_ee(samples) # may raise error if conversion is not possible
     
     # TODO: change hard coded dates
     start_date, end_date = '2021-1-1', '2021-12-31'
-    data_filters['start_date'] = start_date
-    data_filters['end_date'] = end_date
-    data_pool = filter_dataset(data_filters, samples_ee.geometry())
+    data_pool = filter_dataset(data_filters, samples_ee.geometry()) \
+                .filterDate(start_date, end_date)
     feature_pool = compute_feature(data_filters['name'], data_pool, data_filters['feature'])
     year_img = feature_pool.map(lambda img: img.rename(ee.Number(img.get('system:time_start')).format("%d").cat('_feature'))).toBands()
     sample_res = year_img.sampleRegions(samples_ee, geometries=True)
@@ -73,8 +72,8 @@ def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days, me
     return composites
 
 
-def compute_hectare_area(img, boundary, scale) -> ee.Number:
-    area = ee.Number(img.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
+def compute_hectare_area(img, band_name, boundary, scale) -> ee.Number:
+    area = ee.Number(img.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get(band_name)).divide(1e4).getInfo()
     return area
 
 def run_threshold_based_classification(filters):
@@ -91,10 +90,10 @@ def run_threshold_based_classification(filters):
     data_filters = filters['dataset']
     # boundary
     if data_filters['boundary'] == 'upload':
-        boundary = shp_zip_to_ee(data_filters['boundary_file']).geometry()
+        boundary = shp_zip_to_ee(data_filters['boundary_file'])
     else:
         default_boundary = shp_to_ee(default_boundary_file)
-        boundary = default_boundary.filterMetadata('DISTRICT', 'equals', data_filters['boundary']).first().geometry()
+        boundary = ee.Feature(default_boundary.filterMetadata('DISTRICT', 'equals', data_filters['boundary']).first())
     
     # crop mask
     crop_mask = None
@@ -102,7 +101,7 @@ def run_threshold_based_classification(filters):
         crop_mask = ee.Image(data_filters["crop_mask"]).clip(boundary)
     
     # filter dataset
-    pool = filter_dataset(data_filters, boundary)
+    pool = filter_dataset(data_filters, boundary.geometry())
     
     # apply specific filter and thresholds for each season
     season_res = {season: None for season in seasons}
@@ -125,13 +124,10 @@ def run_threshold_based_classification(filters):
             
             # speckle filter if radar data
             # TODO: allow selection of speckle filter type
-            if data_filters['name'] in dataset_names['radar']:
+            if data_filters['name'] in DATASET_LIST['radar']:
             #     season_data_pool = season_data_pool.map(lambda img: refined_lee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
                 season_data_pool = season_data_pool \
-                    .map(lambda img: boxcar(img) \
-                                    .rename(img.bandNames()) \
-                                    .copyProperties(img) \
-                                    .set('system:time_start', img.get('system:time_start')))
+                    .map(lambda img: boxcar(img))
 
             # compute selected feature
             season_data_pool = compute_feature(data_filters['name'], season_data_pool, data_filters['feature'])
@@ -157,14 +153,14 @@ def run_threshold_based_classification(filters):
     
     
     res = {}
-    if data_filters['name'] in dataset_names['radar']:
-        scale = dataset_names['radar'][data_filters['name']]['scale']
+    if data_filters['name'] in DATASET_LIST['radar']:
+        scale = DATASET_LIST['radar'][data_filters['name']]['scale']
     else:
-        scale = dataset_names['optical'][data_filters['name']]['scale']
+        scale = DATASET_LIST['optical'][data_filters['name']]['scale']
     
     # compute area with unit hectar
     # area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
-    area = compute_hectare_area(combined_res, boundary, scale)
+    area = compute_hectare_area(combined_res, 'feature', boundary, scale)
     
     # get mapId for the images
     for season, layer in season_res.items():
@@ -192,7 +188,126 @@ def run_threshold_based_classification(filters):
     return res
 
 
+CLASS_FIELD = '$class'
+
 def run_supervised_classification(filters, samples):
     print(filters)
-    return {'message': "hello"}
     
+    dataset_filters = filters['dataset']
+    classification_filters = filters['classification']
+    
+    start_date, end_date = classification_filters['start_date'], \
+                            classification_filters['end_date']
+    
+    class_property = classification_filters['class_property']
+    class_name = class_property['name']
+    class_value = class_property['positiveValue']
+    for feature in samples["features"]:
+        if feature['properties'][class_name] == class_value:
+            feature['properties'][CLASS_FIELD] = 1
+        else:
+            feature['properties'][CLASS_FIELD] = 0
+
+    samples_ee = geojson_to_ee(samples)
+    
+    if dataset_filters['name'] in DATASET_LIST['radar']:
+        scale = DATASET_LIST['radar'][dataset_filters['name']]['scale']
+    else:
+        scale = DATASET_LIST['optical'][dataset_filters['name']]['scale']
+    
+    # boundary
+    if dataset_filters['boundary'] == 'upload':
+        boundary = shp_zip_to_ee(dataset_filters['boundary_file'])
+    else:
+        default_boundary = shp_to_ee(default_boundary_file)
+        boundary = ee.Feature(
+            default_boundary.filterMetadata(
+                'DISTRICT', 'equals', dataset_filters['boundary']
+            ).first()
+        )
+    
+    # choosing dataset and apply filters
+    pool = filter_dataset(dataset_filters, boundary.geometry()) \
+            .filterDate(start_date, end_date)
+            
+    # speckle filter
+    # TODO: allow more options for speckle filters
+    if dataset_filters['name'] in DATASET_LIST['radar']:
+        pool = pool.map(lambda img: boxcar(img))
+        
+    pool = compute_feature(
+        dataset_filters['name'], 
+        pool, 
+        dataset_filters['feature']
+    )
+    
+    # make composite
+    composites = make_composite(
+        pool, 
+        start_date, 
+        end_date, 
+        days=int(dataset_filters["composite_days"]), 
+        method=dataset_filters['composite']
+    )
+    
+    stacked_image = composites.toBands()
+    stacked_image = stacked_image
+    
+    # get image data for each sample
+    # TODO: remove hard coded name
+    
+    
+    # def map_func(feature):
+    #     feature = ee.Feature(feature)
+    #     class_val = feature.get(class_name)
+    #     return feature.set(CLASS_FIELD, feature.get(class_name))
+    
+    # samples_ee = samples_ee.map()
+    
+    points = stacked_image.sampleRegions(samples_ee, [CLASS_FIELD], scale=scale) \
+                            .randomColumn() \
+                            .set('band_order', stacked_image.bandNames())
+    
+    # train test split
+    training = points.filter(ee.Filter.lt('random', 0.7))
+    testing = points.filter(ee.Filter.gte('random', 0.7))
+    
+    # model training
+    model_func = MODEL_LIST[classification_filters['model']]
+    
+    model_ee = model_func(**classification_filters['model_specs']) \
+                .train(training, CLASS_FIELD)
+    
+    # Classify the image
+    classified = stacked_image.classify(model_ee)
+    
+    # crop mask
+    crop_mask = None
+    if dataset_filters["crop_mask"]:
+        crop_mask = ee.Image(dataset_filters["crop_mask"]).clip(boundary.geometry())
+    
+    classified = classified.updateMask(crop_mask).clip(boundary.geometry())
+    
+    if dataset_filters['name'] in DATASET_LIST['radar']:
+        scale = DATASET_LIST['radar'][dataset_filters['name']]['scale']
+    else:
+        scale = DATASET_LIST['optical'][dataset_filters['name']]['scale']
+    
+    # compute area with unit hectar
+    # area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
+    area = compute_hectare_area(classified, 'classification', boundary.geometry(), scale)
+    
+    # prepare for json return
+    res = {
+        'result': {
+            'tile_url': classified.getMapId(rice_vis_params)['tile_fetcher'].url_format,
+            'download_url': classified.getDownloadURL({
+                'name': 'classified',
+                'scale': default_download_scale,
+                'region': boundary.geometry(),
+            }),
+            'area': area,
+        }
+    }
+    
+    return res
