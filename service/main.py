@@ -160,7 +160,7 @@ def run_threshold_based_classification(filters):
     
     # compute area with unit hectar
     # area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
-    area = compute_hectare_area(combined_res, 'feature', boundary, scale)
+    area = compute_hectare_area(combined_res, 'feature', boundary.geometry(), scale)
     
     # get mapId for the images
     for season, layer in season_res.items():
@@ -170,7 +170,7 @@ def run_threshold_based_classification(filters):
             "download_url": layer.getDownloadURL({
                 'name': season,
                 'scale': default_download_scale,
-                'region': boundary,
+                'region': boundary.geometry(),
             }),
             
         }
@@ -180,7 +180,7 @@ def run_threshold_based_classification(filters):
         'download_url': combined_res.getDownloadURL({
             'name': 'combined',
             'scale': default_download_scale,
-            'region': boundary,
+            'region': boundary.geometry(),
         }),
         "area": area
     }

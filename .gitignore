@@ -1,4 +1,5 @@
 .DS_Store
 .vscode
+.env
 __pycache__
 ee_credential.json
