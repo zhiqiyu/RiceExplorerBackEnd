@@ -18,15 +18,21 @@ def get_phenology(data):
     Get time-series image data for the input ground truth samples
     '''
     # print(data)
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    
     data_filters = data['dataset']
     samples = data['samples']
+    
+    start_date = datetime.strptime(data['phenology_dates']['start_date'], '%Y-%m')
+    end_date = datetime.strptime(data['phenology_dates']['end_date'], '%Y-%m')+relativedelta(months=+1)
     
     samples_ee = geojson_to_ee(samples) # may raise error if conversion is not possible
     
     # TODO: change hard coded dates
-    start_date, end_date = '2021-1-1', '2021-12-31'
+    
     data_pool = filter_dataset(data_filters, samples_ee.geometry()) \
-                .filterDate(start_date, end_date)
+                .filterDate(start_date.strftime("%Y-%m"), end_date.strftime("%Y-%m"))
     feature_pool = compute_feature(data_filters['name'], data_pool, data_filters['feature'])
     year_img = feature_pool.map(lambda img: img.rename(ee.Number(img.get('system:time_start')).format("%d").cat('_feature'))).toBands()
     sample_res = year_img.sampleRegions(samples_ee, geometries=True)
@@ -34,8 +40,8 @@ def get_phenology(data):
     return sample_res.getInfo()
 
 
-def get_monthly_composite(year):
-    return make_false_color_monthly_composite(int(year))
+def get_monthly_composite(start_date, end_date):
+    return make_false_color_monthly_composite(start_date, end_date)
 
 
 def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days, method="median") -> ee.ImageCollection:

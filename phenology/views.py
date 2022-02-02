@@ -26,8 +26,17 @@ def handleSaveSettings(request: HttpRequest) -> HttpResponse:
 def handleGetMonthlyComposite(request: HttpRequest) -> HttpResponse:
     try:
         params_dict = request.GET
-        year = params_dict['year']
-        res = service.get_monthly_composite("2019")
+        start_date = params_dict['start_date']
+        end_date = params_dict['end_date']
+        
+        from datetime import datetime
+        sdate = datetime.strptime(start_date, "%Y-%m")
+        edate = datetime.strptime(end_date, "%Y-%m")
+        
+        if edate < sdate:
+            raise Exception("End date cannot be prior to start date.")
+        
+        res = service.get_monthly_composite(start_date, end_date)
         return JsonResponse(res, safe=False)
     except Exception as e:
         print(e)
