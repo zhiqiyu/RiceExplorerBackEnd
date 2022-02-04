@@ -29,7 +29,6 @@ def get_phenology(data):
     
     samples_ee = geojson_to_ee(samples) # may raise error if conversion is not possible
     
-    # TODO: change hard coded dates
     
     data_pool = filter_dataset(data_filters, samples_ee.geometry()) \
                 .filterDate(start_date.strftime("%Y-%m"), end_date.strftime("%Y-%m"))
@@ -275,6 +274,10 @@ def run_supervised_classification(filters, samples):
     
     model_ee = model_func(**classification_filters['model_specs']) \
                 .train(training, CLASS_FIELD)
+                
+    # evaluate model
+    test_pred = testing.classify(model_ee)
+    confusion_matrix = test_pred.errorMatrix(CLASS_FIELD, 'classification')
     
     # Classify the image
     classified = stacked_image.classify(model_ee)
@@ -296,16 +299,18 @@ def run_supervised_classification(filters, samples):
     area = compute_hectare_area(classified, 'classification', boundary.geometry(), scale)
     
     # prepare for json return
+    import json
     res = {
-        'result': {
+        'classification_result': {
             'tile_url': classified.getMapId(rice_vis_params)['tile_fetcher'].url_format,
             'download_url': classified.getDownloadURL({
                 'name': 'classified',
                 'scale': default_download_scale,
                 'region': boundary.geometry(),
             }),
-            'area': area,
-        }
+        },
+        'area': area,
+        'confusion_matrix': json.dumps(confusion_matrix.getInfo())
     }
     
     return res
