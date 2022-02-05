@@ -6,10 +6,9 @@ This is the Django backend of the rice mapping app.
 
 If you have `conda` installed, you can create a new conda environment by running:
 ```
-conda create --name <env> --file conda_list.txt
+conda create --name <env> --file conda_requirements_{os version}.txt
 ```
-
-NOTE: the environment is only tested on my ARM-based M1 chip Mac mini with Python 3.9. 
+The `os version` can be either AARM64 (Apple Silicon M1 chip), or linux64.  
 
 ## Get Started
 

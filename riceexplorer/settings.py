@@ -124,7 +124,7 @@ USE_TZ = True
 
 FORCE_SCRIPT_NAME = '/servir/rice-explorer/'
 
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
