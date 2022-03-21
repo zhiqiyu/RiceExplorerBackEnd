@@ -29,12 +29,25 @@ def get_phenology(data):
     
     samples_ee = geojson_to_ee(samples) # may raise error if conversion is not possible
     
-    
     data_pool = filter_dataset(data_filters, samples_ee.geometry()) \
                 .filterDate(start_date.strftime("%Y-%m"), end_date.strftime("%Y-%m"))
-    feature_pool = compute_feature(data_filters['name'], data_pool, data_filters['feature'])
-    year_img = feature_pool.map(lambda img: img.rename(ee.Number(img.get('system:time_start')).format("%d").cat('_feature'))).toBands()
-    sample_res = year_img.sampleRegions(samples_ee, geometries=True)
+    
+    composite = make_composite(data_pool, \
+                               start_date.strftime("%Y-%m"), \
+                               end_date.strftime("%Y-%m"), \
+                               int(data_filters['composite_days']), \
+                               data_filters['composite'])
+    
+    feature_pool = compute_feature(data_filters['name'], composite, data_filters['feature'])
+
+    year_img = feature_pool.map(lambda img: img.unmask(99999).rename(ee.Number(img.get('system:time_start')).format("%d").cat('_feature'))) \
+                            .toBands()
+    
+    sample_res = year_img.sampleRegions(
+        samples_ee,
+        scale=10,
+        geometries=True
+    )
     
     return sample_res.getInfo()
 
@@ -63,7 +76,7 @@ def make_composite(data_pool: ee.ImageCollection, start_date, end_date, days, me
         else:
             raise BadRequest("Unrecognized composite type")
         
-        return ee.Algorithms.If(filtered_pool.size().gt(0), season_data)
+        return ee.Algorithms.If(filtered_pool.size().gt(0), season_data.set('system:time_start', date.millis()))
     
     def map_func(dateMillis):
         date = ee.Date(dateMillis)
@@ -184,7 +197,7 @@ def run_threshold_based_classification(filters):
         'tile_url': combined_res.getMapId(rice_vis_params)['tile_fetcher'].url_format,
         'download_url': combined_res.getDownloadURL({
             'name': 'combined',
-            'scale': default_download_scale,
+            'scale': 100,
             'region': boundary.geometry(),
         }),
         "area": area
@@ -305,7 +318,7 @@ def run_supervised_classification(filters, samples):
             'tile_url': classified.getMapId(rice_vis_params)['tile_fetcher'].url_format,
             'download_url': classified.getDownloadURL({
                 'name': 'classified',
-                'scale': default_download_scale,
+                'scale': 100,
                 'region': boundary.geometry(),
             }),
         },
