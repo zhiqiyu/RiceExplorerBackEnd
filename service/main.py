@@ -114,9 +114,12 @@ def run_threshold_based_classification(filters):
         boundary = ee.Feature(default_boundary.filterMetadata('DISTRICT', 'equals', data_filters['boundary']).first())
     
     # crop mask
-    crop_mask = None
-    if data_filters["crop_mask"]:
-        crop_mask = ee.Image(data_filters["crop_mask"]).clip(boundary)
+    crop_mask = ee.Image(1)
+    if data_filters["use_crop_mask"]:
+        if data_filters["crop_mask"]:
+            crop_mask = ee.Image(data_filters["crop_mask"]).clip(boundary)
+        else:
+            raise BadRequest("Invalid crop mask argument.")
     
     # filter dataset
     pool = filter_dataset(data_filters, boundary.geometry())
