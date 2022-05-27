@@ -13,6 +13,9 @@ default_download_scale = 250
 
 rice_vis_params = {"min": 0, "max": 1, "opacity": 1, "palette": ["ffffff", "328138"]}
 
+
+
+
 def get_phenology(data):
     '''
     Get time-series image data for the input ground truth samples
@@ -125,52 +128,57 @@ def run_threshold_based_classification(filters):
     pool = filter_dataset(data_filters, boundary.geometry())
     
     # apply specific filter and thresholds for each season
-    season_res = {season: None for season in seasons}
+    op = filters['op']
+    season_filters = filters['seasons']
+    season_res = {season['name']: None for season in season_filters}
     
     def map_composites(composite):
         composite = ee.Image(composite)
-        return (composite.lte(thres_max)).And(composite.gte(thres_min)).updateMask(crop_mask).clip(boundary)
+        return (composite.lte(thres_max)) \
+            .And(composite.gte(thres_min)) \
+            .updateMask(crop_mask).clip(boundary)
 
-    for season in seasons:
-        if season in filters:
-            
-            # date range of this season
-            start_date, end_date = filters[season]['start'], filters[season]['end']
-            
-            # threshold min and max
-            thres_min, thres_max = float(filters[season]['min']), float(filters[season]['max'])
 
-            # filter by season date range
-            season_data_pool = pool.filter(ee.Filter.date(start_date, end_date))
+    for season in season_filters:
             
-            # speckle filter if radar data
-            # TODO: allow selection of speckle filter type
-            if data_filters['name'] in DATASET_LIST['radar']:
-            #     season_data_pool = season_data_pool.map(lambda img: refined_lee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
-                season_data_pool = season_data_pool \
-                    .map(lambda img: boxcar(img))
+        # date range of this season
+        start_date, end_date = season['start'], season['end']
+        
+        # threshold min and max
+        thres_min, thres_max = float(season['min']), float(season['max'])
 
-            # compute selected feature
-            season_data_pool = compute_feature(data_filters['name'], season_data_pool, data_filters['feature'])
-            
-            # make composite
-            composites = make_composite(season_data_pool, start_date, end_date, days=int(data_filters["composite_days"]), method=data_filters['composite'])
-            
-            
-            # print(season_data.getDownloadUrl({'name': 'data', 'region': boundary}))
-            # season_res[season] = (season_data.lte(thres_max)).And(season_data.gte(thres_min)).updateMask(crop_mask).clip(boundary)
-            thresholded_composites = composites.map(map_composites)
-            
-            season_res[season] = thresholded_composites.Or()
-            
-        else:
-            del season_res[season]
+        # filter by season date range
+        season_data_pool = pool.filter(ee.Filter.date(start_date, end_date))
+        
+        # speckle filter if radar data
+        # TODO: allow selection of speckle filter type
+        if data_filters['name'] in DATASET_LIST['radar']:
+        #     season_data_pool = season_data_pool.map(lambda img: refined_lee(img).copyProperties(img).set('system:time_start', img.get('system:time_start')))
+            season_data_pool = season_data_pool \
+                .map(lambda img: boxcar(img))
+
+        # compute selected feature
+        season_data_pool = compute_feature(data_filters['name'], season_data_pool, data_filters['feature'])
+        
+        # make composite
+        composites = make_composite(season_data_pool, start_date, end_date, days=int(data_filters["composite_days"]), method=data_filters['composite'])
+        
+        
+        # print(season_data.getDownloadUrl({'name': 'data', 'region': boundary}))
+        # season_res[season] = (season_data.lte(thres_max)).And(season_data.gte(thres_min)).updateMask(crop_mask).clip(boundary)
+        thresholded_composites = composites.map(map_composites)
+        
+        season_res[season['name']] = thresholded_composites.Or()
+        
 
     # make a final map based on all seasons
     season_res_list = list(season_res.values())
     combined_res = season_res_list[0]
     for i in range(1, len(season_res_list)):
-        combined_res = combined_res.Or(season_res_list[i])
+        if op == 'and':
+            combined_res = combined_res.And(season_res_list[i])
+        else:
+            combined_res = combined_res.Or(season_res_list[i])
     
     
     res = {}
@@ -184,27 +192,34 @@ def run_threshold_based_classification(filters):
     area = compute_hectare_area(combined_res, 'feature', boundary.geometry(), scale)
     
     # get mapId for the images
-    for season, layer in season_res.items():
+    # for season, layer in season_res.items():
         
-        res[season] = {
-            "tile_url": layer.getMapId(rice_vis_params)['tile_fetcher'].url_format,
-            "download_url": layer.getDownloadURL({
-                'name': season,
-                'scale': default_download_scale,
-                'region': boundary.geometry(),
-            }),
+    #     res[season] = {
+    #         "tile_url": layer.getMapId(rice_vis_params)['tile_fetcher'].url_format,
+    #         "download_url": layer.getThumbURL({
+    #             **rice_vis_params,
+    #             'dimensions': 1000,
+    #             'format': 'jpg'
+    #         }),
             
-        }
+    #     }
         
     res['combined'] = {
         'tile_url': combined_res.getMapId(rice_vis_params)['tile_fetcher'].url_format,
         'download_url': combined_res.getDownloadURL({
-            'name': 'combined',
-            'scale': 100,
-            'region': boundary.geometry(),
+            **rice_vis_params,
+                'dimensions': 1000,
+                'format': 'jpg'
         }),
         "area": area
     }
+    
+    # ee.batch.Export.image.toDrive({
+    #     "image": combined_res,
+    #     "description": "combined",
+    #     "region": boundary.geometry(),
+    #     "scale": 10
+    # })
         
     return res
 
