@@ -188,41 +188,39 @@ def run_threshold_based_classification(filters):
         scale = DATASET_LIST['optical'][data_filters['name']]['scale']
     
     # compute area with unit hectar
-    # area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
     area = compute_hectare_area(combined_res, 'feature', boundary.geometry(), scale)
     
-    # get mapId for the images
-    # for season, layer in season_res.items():
-        
-    #     res[season] = {
-    #         "tile_url": layer.getMapId(rice_vis_params)['tile_fetcher'].url_format,
-    #         "download_url": layer.getThumbURL({
-    #             **rice_vis_params,
-    #             'dimensions': 1000,
-    #             'format': 'jpg'
-    #         }),
-            
-    #     }
         
     res['combined'] = {
         'tile_url': combined_res.getMapId(rice_vis_params)['tile_fetcher'].url_format,
-        'download_url': combined_res.getDownloadURL({
+        'download_url': combined_res.getThumbURL({
             **rice_vis_params,
-                'dimensions': 1000,
-                'format': 'jpg'
+            'dimensions': 1920,
+            'region': boundary.geometry(),
+            'format': 'jpg'
         }),
         "area": area
     }
     
-    # ee.batch.Export.image.toDrive({
-    #     "image": combined_res,
-    #     "description": "combined",
-    #     "region": boundary.geometry(),
-    #     "scale": 10
-    # })
+    task = ee.batch.Export.image.toDrive(**{
+        "image": combined_res,
+        "description": "combined",
+        # 'folder': "EarthEngine",
+        "region": boundary.geometry(),
+        "scale": 10
+    })
+    
+    task.start()
         
     return res
 
+
+def get_task_list():
+    tasks = ee.batch.Task.list()
+    res = []
+    for task in tasks:
+        res.append(task.status())
+    return res
 
 CLASS_FIELD = '$class'
 
