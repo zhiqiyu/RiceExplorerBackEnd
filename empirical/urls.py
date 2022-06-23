@@ -6,4 +6,5 @@ app_name = 'empirical'
 
 urlpatterns = [
     path('', views.run_algorithm, name="set_params"),
+    path('export', views.handle_export_result, name="export")
 ]

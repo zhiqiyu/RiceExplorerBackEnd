@@ -1,4 +1,5 @@
 from django.core.exceptions import BadRequest
+from django.http import FileResponse
 import ee
 from .data_processing import compute_feature, filter_dataset, make_false_color_monthly_composite
 from .conversion import geojson_to_ee, shp_to_ee, shp_zip_to_ee
@@ -13,7 +14,7 @@ default_download_scale = 250
 
 rice_vis_params = {"min": 0, "max": 1, "opacity": 1, "palette": ["ffffff", "328138"]}
 
-
+rice_thumbnail_params = {"min": 0, "max": 2, "opacity": 1, "palette": ["000000", "328138", "ffffff"]}
 
 
 def get_phenology(data):
@@ -180,21 +181,27 @@ def run_threshold_based_classification(filters):
         else:
             combined_res = combined_res.Or(season_res_list[i])
     
-    
-    res = {}
     if data_filters['name'] in DATASET_LIST['radar']:
         scale = DATASET_LIST['radar'][data_filters['name']]['scale']
     else:
         scale = DATASET_LIST['optical'][data_filters['name']]['scale']
+        
+    return combined_res, boundary, scale
+
+def make_empirical_results(img, boundary, scale):
+    
+    res = {}
     
     # compute area with unit hectar
-    area = compute_hectare_area(combined_res, 'feature', boundary.geometry(), scale)
+    area = compute_hectare_area(img, 'feature', boundary.geometry(), scale)
     
+    # set nodata value to 2 for visualiztion purpose
+    thumbnail_img = img.unmask(2)
         
     res['combined'] = {
-        'tile_url': combined_res.getMapId(rice_vis_params)['tile_fetcher'].url_format,
-        'download_url': combined_res.getThumbURL({
-            **rice_vis_params,
+        'tile_url': img.getMapId(rice_vis_params)['tile_fetcher'].url_format,
+        'download_url': thumbnail_img.getThumbURL({
+            **rice_thumbnail_params,           # the style for thumbnail picture
             'dimensions': 1920,
             'region': boundary.geometry(),
             'format': 'jpg'
@@ -202,18 +209,22 @@ def run_threshold_based_classification(filters):
         "area": area
     }
     
-    task = ee.batch.Export.image.toDrive(**{
-        "image": combined_res,
-        "description": "combined",
-        # 'folder': "EarthEngine",
+    return res
+
+def export_result(img, boundary, scale):
+    import time
+        
+    task = ee.batch.Export.image.toDrive(img, **{
+        "description": str(time.time()),
         "region": boundary.geometry(),
-        "scale": 10
+        "scale": scale,
+        "maxPixels": 1e13,
     })
     
     task.start()
-        
-    return res
-
+    
+    return task.status()['id']
+    
 
 def get_task_list():
     tasks = ee.batch.Task.list()
@@ -221,6 +232,54 @@ def get_task_list():
     for task in tasks:
         res.append(task.status())
     return res
+
+def get_the_task(id):
+    tasks = ee.batch.Task.list()
+    for task in tasks:
+        if task.status()['id'] == id:
+            return task.status()
+    return None
+    
+
+def download_file(id):
+    from pydrive.auth import GoogleAuth
+    from pydrive.drive import GoogleDrive
+    from oauth2client.service_account import ServiceAccountCredentials
+    from utils.credential import EE_PRIVATE_KEY
+    import json
+    
+    status = get_the_task(id)
+    if status is None:
+        return None
+    
+    gauth = GoogleAuth()
+    scopes=['https://www.googleapis.com/auth/drive']
+    # print(json.loads(EE_PRIVATE_KEY))
+    gauth.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+        json.loads(EE_PRIVATE_KEY),
+        scopes=scopes
+    )
+    drive = GoogleDrive(gauth)
+    
+    file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+    
+    for file in file_list:
+        
+        filename = file['title']
+        
+        if filename == status['description'] + ".tif":
+
+            # download file into working directory (in this case a tiff-file)
+            file.GetContentFile("results/" + filename, mimetype="image/tiff")
+
+            # delete file afterwards to keep the Drive empty
+            # file.Delete()
+            
+            return "results/" + filename
+    
+    return None
+    
+    
 
 CLASS_FIELD = '$class'
 
@@ -322,20 +381,30 @@ def run_supervised_classification(filters, samples):
         scale = DATASET_LIST['radar'][dataset_filters['name']]['scale']
     else:
         scale = DATASET_LIST['optical'][dataset_filters['name']]['scale']
+        
+    return classified, boundary, scale, confusion_matrix
+
+
+def make_classification_results(img, boundary, scale, confusion_matrix):
+    
+    res = {}
     
     # compute area with unit hectar
     # area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
-    area = compute_hectare_area(classified, 'classification', boundary.geometry(), scale)
+    area = compute_hectare_area(img, 'classification', boundary.geometry(), scale)
+    
+    thumbnail_img = img.unmask(2)
     
     # prepare for json return
     import json
     res = {
         'classification_result': {
-            'tile_url': classified.getMapId(rice_vis_params)['tile_fetcher'].url_format,
-            'download_url': classified.getDownloadURL({
-                'name': 'classified',
-                'scale': 100,
+            'tile_url': img.getMapId(rice_vis_params)['tile_fetcher'].url_format,
+            'download_url': thumbnail_img.getThumbURL({
+                 **rice_thumbnail_params,           # the style for thumbnail picture
+                'dimensions': 1920,
                 'region': boundary.geometry(),
+                'format': 'jpg'
             }),
         },
         'area': area,
@@ -343,3 +412,4 @@ def run_supervised_classification(filters, samples):
     }
     
     return res
+    

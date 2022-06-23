@@ -18,12 +18,34 @@ def run_algorithm(request):
                 filters['dataset']['boundary_file'] = request.FILES['boundary_file']
                 
             try:
-                res = service.run_threshold_based_classification(filters)
+                img, boundary, scale = service.run_threshold_based_classification(filters)
+                res = service.make_empirical_results(img, boundary, scale)
                 return JsonResponse(res)
-            except BadRequest as e:
+            except Exception as e:
                 return HttpResponseBadRequest(e)
         else:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Form is invalid, please check if all parameters are set.")
+
+    else:
+        return HttpResponseNotAllowed(["GET"])  
+
+@csrf_exempt
+def handle_export_result(request):
+    if request.method == "POST":
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            filters = json.load(request.FILES['json'])
+            if 'boundary_file' in request.FILES:
+                filters['dataset']['boundary_file'] = request.FILES['boundary_file']
+                
+            try:
+                img, boundary, scale = service.run_threshold_based_classification(filters)
+                taskId = service.export_result(img, boundary, scale)
+                return JsonResponse(taskId, safe=False)
+            except Exception as e:
+                return HttpResponseBadRequest(e)
+        else:
+            return HttpResponseBadRequest("Form is invalid, please check if all parameters are set.")
 
     else:
         return HttpResponseNotAllowed(["GET"])

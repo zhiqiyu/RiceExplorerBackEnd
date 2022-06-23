@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 
-from .views import home, get_tasks
+from .views import get_task_with_id, home, get_tasks, handle_download_file
 
 urlpatterns = [
     path('', home, name="home"),
@@ -25,7 +25,10 @@ urlpatterns = [
     path('empirical/', include('empirical.urls')),
     path('classification/', include('classification.urls')),
     
+    path("tasks/<str:id>", get_task_with_id),
     path("tasks/", get_tasks),
+    
+    path("download/<str:id>", handle_download_file),
 
     re_path(r"^$", home),
     re_path(r"^(?:.*)/?$", home),
