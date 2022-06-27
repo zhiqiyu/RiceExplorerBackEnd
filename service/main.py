@@ -393,6 +393,9 @@ def make_classification_results(img, boundary, scale, confusion_matrix):
     # area = ee.Number(combined_res.multiply(ee.Image.pixelArea()).reduceRegion(ee.Reducer.sum(),boundary,scale,None,None,False,1e13).get('feature')).divide(1e4).getInfo()
     area = compute_hectare_area(img, 'classification', boundary.geometry(), scale)
     
+    oa = confusion_matrix.accuracy()
+    kappa = confusion_matrix.kappa()
+    
     thumbnail_img = img.unmask(2)
     
     # prepare for json return
@@ -408,7 +411,9 @@ def make_classification_results(img, boundary, scale, confusion_matrix):
             }),
         },
         'area': area,
-        'confusion_matrix': json.dumps(confusion_matrix.getInfo())
+        'confusion_matrix': json.dumps(confusion_matrix.getInfo()),
+        'oa': oa.getInfo(),
+        'kappa': kappa.getInfo(),
     }
     
     return res
