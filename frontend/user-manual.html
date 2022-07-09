@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>user-manual.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/*
+
+Atom One Light by Daniel Gamage
+Original One Light Syntax theme from https://github.com/atom/one-light-syntax
+
+base:    #fafafa
+mono-1:  #383a42
+mono-2:  #686b77
+mono-3:  #a0a1a7
+hue-1:   #0184bb
+hue-2:   #4078f2
+hue-3:   #a626a4
+hue-4:   #50a14f
+hue-5:   #e45649
+hue-5-2: #c91243
+hue-6:   #986801
+hue-6-2: #c18401
+
+*/
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  color: #383a42;
+  background: #fafafa;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #a0a1a7;
+  font-style: italic;
+}
+
+.hljs-doctag,
+.hljs-keyword,
+.hljs-formula {
+  color: #a626a4;
+}
+
+.hljs-section,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-deletion,
+.hljs-subst {
+  color: #e45649;
+}
+
+.hljs-literal {
+  color: #0184bb;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta-string {
+  color: #50a14f;
+}
+
+.hljs-built_in,
+.hljs-class .hljs-title {
+  color: #c18401;
+}
+
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-number {
+  color: #986801;
+}
+
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-title {
+  color: #4078f2;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-link {
+  text-decoration: underline;
+}
+
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="user-manual-for-ricemapengine">User Manual for RiceMapEngine</h1>
+<p><em>Author: Zhiqi Yu</em><br>
+<em>Date: 6/24/2022</em></p>
+<h2 id="1-introduction">1. Introduction</h2>
+<p>The RiceMapEngine is a web application that uses Google Earth Engine APIs to perform rice mapping with remote sensing.</p>
+<p>This application mainly includes three sub-applications, namely Phenology Explorer (PE), Empirical Thresholding (ET), and Supervised Classification (SC), that serve different purposes in the workflow of rice mapping.</p>
+<p>Specifically, PE provides functions to inspect ground truth samples by the phenology information acquired from remote sensing. By identifying phenology stages of ground truth samples based on remote sensing-generated phenology information, users can identify true rice samples and false rice samples, which should be removed for further analysis. The PE also generates empirical thresholds from ground truth samples for user-defined phenology phases.</p>
+<p>The ET and SC are two methods for rice classification. ET allows rice mapping using empirical thresholds. Thresholds represent value ranges for the remote sensing images within certain phenological phases. The thresholds can be generated from PE or from previous experience. The classification result is generated simply by determine if a pixel value is within the provided value range. Ground truth samples are not required for this method.</p>
+<p>SC is the good old supervised classification method that trains machine learning models with ground truth samples and classify remote sensing images to rice maps. Ground truth samples are required for this method.</p>
+<p>Following sections give details of each sub-application.</p>
+<h2 id="2-phenology-explorer-pe">2. Phenology Explorer (PE)</h2>
+<p>The UI of PE is shown in the following figure:</p>
+<p><img src="./images/phenology-UI.png" alt="phenology-UI"></p>
+<p>The overall UI is divided into several panels.</p>
+<h3 id="21-left-panel">2.1. Left Panel</h3>
+<p>The left panel UI allows users to select what and how satellite images are used to extract phenology information.</p>
+<p><img src="./images/sar-data.png" alt="left-panel"></p>
+<p>These parameters are available for customization:</p>
+<ul>
+<li>The data source, i.e., what satellite data to use, can be radar or optical data.</li>
+<li>Cloud cover (only relevant for optical data source), i.e., the maximum <strong>percentage</strong> of cloud cover allowed on each image.</li>
+<li>Orbit, ascending and/or decending.</li>
+<li>Feature, i.e., a single number to compute from original bands, can be the raw band values, or indices like NDVI, etc.</li>
+<li>Composite Type. This is the aggregation method to use for making image composites. <strong>Note:</strong> The composite is necessary because the study area can span across multiple swaths, which cause images to have different collection time.</li>
+<li>Composite Days. This is the number of days as intervals to make composites. Together with composite type, this defines how the image composites will be made.</li>
+</ul>
+<h3 id="22-middle-panel">2.2. Middle Panel</h3>
+<p>The middle panel is divided into two areas, one being a map for visualization, and another to show monthly false color composites to assist inspecting phenology information.</p>
+<p>In the bottom area, users can define the overall date range for phenology inspection. For demonstration purpose, the figure below selects the date range to be from the start of January 2019 to the end of March 2019, and correspondingly, three maps that correspond to each of the three months will be shown. Clicking the &quot;Load Composites&quot; button will load 30-day false color composite from Sentinel-2 or Landsat-8.</p>
+<p><img src="images/pheno-date-range.png" alt="phenology-date-range"></p>
+<p>After ground truth samples are loaded into the application, and a sample is selected, all the maps will center around the selected sample automatically.</p>
+<h3 id="22-the-right-panel">2.2. The right panel</h3>
+<p>The right panel includes two tabs, namely <strong>Samples</strong> and <strong>Phenology Phases</strong>. The sample tab as shown in the figure below includes a list of ground truth samples uploaded to the application, and a chart that shows time-series satellite image data that assumbly captures critical phenology information. The phenology phases as shown in the second figure below allows users to set up the date ranges of phenology phases, and acquire thresholds for those phases according to the satellite image data.</p>
+<h4 id="221-sample-tab">2.2.1. Sample tab</h4>
+<p>The sample tab is shown in figure below.</p>
+<p><img src="images/pheno-right-sample.png" alt="phenology-right-sample"></p>
+<p><strong>Ground truth sample upload/download</strong></p>
+<p>Users use the <strong>Upload</strong> button to load the ground truth samples to the application. The accepted file should be a <strong>zipped</strong> shapefile. The <strong>Download</strong> button can be used to download the modified version of ground truth samples from the application.</p>
+<p>Once the ground truth samples are loaded in the application, several things will happen:</p>
+<ol>
+<li>The samples will be shown on the map.</li>
+<li>A list of samples will show in the panel</li>
+</ol>
+<p>In the sample container, there are two parameters that are necessary:</p>
+<ul>
+<li>Class field: the property name from each sample that represents the class of the sample.</li>
+<li>Class value: the literal value of the &quot;class field&quot; that represents the rice class.</li>
+</ul>
+<p>Changing the class field and class value has several effects:</p>
+<ol>
+<li>The title of each sample in the list will change to the value of the selected class field of each sample. For example, in the figure, the first sample's &quot;Land_cover&quot; field value is &quot;Rice&quot;, thus the title,</li>
+<li>The samples that matches the selected class field and class values will be highlighted. For example, because &quot;Rice&quot; is selected as the target class, the first sample is highlighted in light green color.</li>
+<li>The color of samples shown on the map will change to reflect the classes. Target classes will be red, and non-target classes will be blue.</li>
+</ol>
+<p>The figure below shows how the app will look like when a sample is selected:</p>
+<p><img src="images/phenology-loaded.png" alt="phenology-loaded-exp"></p>
+<p><strong>Phenology Inspection</strong></p>
+<p>After the sample is loaded into the application, users can click the &quot;Get Phenology&quot; button to the top right corner of the header. This will sample from satellite images at ground truth samples locations and attach satellite image data values to each sample. Then, users can click on samples in the list to see the time-series satellite data values on the chart area.</p>
+<p>The figure below shows how the figure will look like once a sample is selected:</p>
+<p><img src="images/phenology-fetched.png" alt="phenology-fetched"></p>
+<p><em><strong>Note</strong>: You need to re-select a sample to see the chart after the &quot;Get Phenology&quot; step finishes.</em></p>
+<h4 id="222-phenology-phases-tab">2.2.2. Phenology Phases tab</h4>
+<p>In the &quot;phenology phases&quot; tab, users can edit names and date ranges of phenology phases as they like. The figure below shows how to add, delete, and edit a phenology phase. Note that the threshold values are not editable as they will be calculated automatically.</p>
+<p><img src="images/phenology-phases.png" alt="phenology-phases"></p>
+<p><strong>Calculate thresholds for phenology phases</strong></p>
+<p>After defining the time frame of each phenology phases, users can click the &quot;Calculate Thresholds&quot; button to calculate the threshold values using the chosen satellite image data and all the target class ground truth samples. The algorithm to calculate the thresholds are as follows:</p>
+<ul>
+<li>For each of the phenology phases:
+<ul>
+<li>For all ground truth samples that belong to the target class:
+<ul>
+<li>Get satellite data values within the time frame</li>
+<li>Remove outliers using <a href="https://en.wikipedia.org/wiki/Interquartile_range#:~:text=The%20interquartile%20range%20is%20often,or%20above%20Q3%20%2B%201.5%20IQR.">interquartile method</a>.</li>
+<li>Set the minimum to be [mean - std.dev] and max to be [mean + std.dev].</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-empirical-thresholding-et">3. Empirical Thresholding (ET)</h2>
+<p>The ET is the first method of rice classification. The overall UI is divided into three parts as the same as PE.</p>
+<h3 id="31-left-panel">3.1. Left Panel</h3>
+<p>The left panel contains the same parameter settings as PE plus additional UI controls that specify auxiliary datasets to be used. The auxiliary datasets include:</p>
+<ul>
+<li>Boundary. Users can select from the preset boundaries of the Terai belt districts of Nepal, or they can upload their own boundary file as a <strong>zipped shapefile</strong>.</li>
+<li>Crop Mask. Whether to use a crop mask. By detault, this is checked on, and users can input the ID of a <strong>public GEE asset</strong> (see <a href="https://developers.google.com/earth-engine/guides/asset_manager">this guide</a> on how to make an asset public) to specify which crop mask to be used.</li>
+</ul>
+<p><img src="images/empirical-aux.png" alt="empirical-aux"></p>
+<h3 id="32-right-panel">3.2. Right Panel</h3>
+<p>The right panel, as shown in the figure below, is similar to the &quot;Phenology Phases&quot; tab from the right panel of PE.</p>
+<p><img src="images/empirical-right.png" alt="empirical-right"></p>
+<ul>
+<li>Aggregated method. This is allowing users to specify if all the thresholds of phenology phases should be matched or at least one of them should be matched. &quot;All&quot; means all phases need to be satisfied and &quot;Any&quot; means at least one needs to be satisfied.</li>
+<li>Thresholds. Node that thresholds of each phenology phases are editable. If the thresholds were already calculated in PE, then they will show in ET as well.</li>
+</ul>
+<h3 id="33-mid-panel">3.3. Mid Panel</h3>
+<p>The middle panel contains the same map and a bottom area. The bottom area is to show a log of activities, which include activities in both ET and SC.</p>
+<p>Specifically, the logs will record the time when a classification attempt is made and what parameters are set that conducted the classification.</p>
+<p>The figure below shows two logs after conducting a rice mapping task using ET. The first log records all parameters in JSON format, and once the classifiaction is finished, the second log shows the rice area.</p>
+<p><img src="images/empirical-log.png" alt="empirical-log"></p>
+<h3 id="34-top-bar">3.4. Top bar</h3>
+<p>There are three buttons on the top bar for ET.</p>
+<ul>
+<li>Run. After all parameters are properly set, clicking this button will execute the ET algorithm to produce rice map.</li>
+<li>Export
+<ul>
+<li>Download as thumbnail: this button will be disabled if no successful rice classification is conducted. Once a rice mapping task is finished, this button will be clickable, and users can view the classification result in a JPEG figure with the maximum dimension as 1980 pixels.</li>
+<li>Export to Google Drive: this button is to be used when the classification results need to be retrieved in their original spatial resolution. It is recommended to fine tune parameters before exporting results. Running the export will return a unique task ID that can be used to check task status later. This function will be explained in detail later.</li>
+<li>Export Status: click this button to show a search bar, where users can check their task status by inputing their task ID. This will be explained later.</li>
+</ul>
+</li>
+</ul>
+<h2 id="4-supervised-classification">4. Supervised Classification</h2>
+<p>SC is another method of rice mapping. This method uses ground truth data to train machine learning models, which will be used to produce rice maps.</p>
+<h3 id="41-left-panel">4.1. Left Panel</h3>
+<p>In addition to the satellite data-related parameters and auxiliary dataset parameters, SC include more parameters related to machine learning models and the training process.</p>
+<ul>
+<li>Image Date Range. Users can specify the start date and end date to select satellite images from.</li>
+<li>Training ratio. The ratio of the ground truth data to be used for training. Default is 0.7, which means a randomly selected 70% of the data will be used for training, and the rest 30% is held out for testing.</li>
+<li>Model. This is the model to be chosen from. Currently only supporting Random Forest. The detailed parameters of the Random forest model can be set after selecting &quot;Random Forest&quot;. The explanation of those parameters can be seen by clicking the info icon next to the name of the parameter.</li>
+</ul>
+<p><img src="images/sc-model.png" alt=""></p>
+<h3 id="42-right-panel">4.2. Right Panel</h3>
+<p>The right panel is exactly the same as the sample container as described in <a href="#221-sample-tab">2.2.1.</a></p>
+<p><strong>Note</strong> that while the &quot;class field&quot; and &quot;class value&quot; are not required to be set in PE, they are required to make SC work.</p>
+<h3 id="43-mid-panel">4.3. Mid Panel</h3>
+<p>The mid panel is exactly the same as the mid panel as described in <a href="#33-mid-panel">3.3.</a></p>
+<p>In addition to the area of rice, the log panel of SC also shows the model testing results including the confusion matrix, overall accuracy, and the Cohen's Kappa score. Axis 0 (the rows) of the matrix correspond to the actual values, and Axis 1 (the columns) to the predicted values, and 0 means non-rice and 1 means rice. The figure below shows an example of the log after performing a successful rice mapping using SC:</p>
+<p><img src="images/sc-log.png" alt="sc-log"></p>
+<h3 id="44-top-bar">4.4. Top bar</h3>
+<p>The top bar of SC is exactly the same as ET.</p>
+<h1 id="5-exporting">5. Exporting</h1>
+<p><strong>Start an export task</strong></p>
+<p>Export function is available for ET and SC. Export is a function that is similar to the export function in GEE online code editor. It allows retrieving processing results in its original spatial resolution even if the processing is complicated and file size is large with a sacrifice of time.</p>
+<p>In RiceMapEngine, the exporting function can be accessed by clicking the &quot;Export&quot; -&gt; &quot;Export to Google Drive&quot; button. Clicking this button will run the classification algorithm with the parameters that are set in the app and no results will be shown on the map. Instead, a unique ID will be generated for the export task. The ID will look like in the figure below:</p>
+<p><img src="images/export-log-id.png" alt="export-log-id"></p>
+<p><strong>Check task status</strong></p>
+<p>To check the status of a task created before, users can click the &quot;Export Status&quot; button on the top right of the app. A dialog will be opened which contains a search bar:</p>
+<p><img src="images/export-dialog.png" alt="export-dialog"></p>
+<p>Users can input the generated ID into the search bar to check the status of that task. For example, below is the status of the task we created just now:</p>
+<p><img src="images/export-task-status.png" alt="export-task-status"></p>
+<p>Note that the badge before the task ID in the figure shows &quot;Running&quot;, which means the task is currently running on the Google Cloud. There are many more task status that you may see, check <a href="https://developers.google.com/earth-engine/guides/processing_environments#list-of-task-states">here</a> for a complete list of status a task may have.</p>
+<p>Once a task is completed, users can see a download button, which can be used to download the result as a GeoTIFF file to the local machine.</p>
+<p><img src="images/export-completed.png" alt="export-completed"></p>
+
+</body>
+</html>
